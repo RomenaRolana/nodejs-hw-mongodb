@@ -1,43 +1,44 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 import pino from 'pino-http';
-import dotenv from 'dotenv';
 import { env } from './utils/env.js';
+import contactsRouters from './routers/routersContacts.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
-import contactsRouter from './routers/contacts.js';
 
-dotenv.config();
-
-const PORT = Number(env('PORT', '3000'));
-
-export const setupServer = () => {
+export function setupServer() {
   const app = express();
-
-  app.use(express.json({
-    type: ['application/json', 'application/vnd.api+json'],
-    limit: '100kb',
-  }));
 
   app.use(cors());
 
-  app.use(pino({
-    transport: {
-      target: 'pino-pretty',
-    },
-  }));
+  app.use(
+    express.json(
+      express.json({
+        type: ['application/json'],
+        limit: '100kb',
+      }),
+    ),
+  );
 
-  // Додаємо роутер для контактів
-  app.use(contactsRouter);
+  app.use(
+    pino({
+      transport: {
+        target: 'pino-pretty',
+      },
+    }),
+  );
 
-  // Обробник для неіснуючих маршрутів
-  app.use(notFoundHandler);
+  app.use(contactsRouters);
 
-  // Глобальний обробник помилок
+  app.use('*', notFoundHandler);
+
   app.use(errorHandler);
 
-  // Запуск сервера
+  const PORT = env('PORT', 3000);
+
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(
+      `Server is running on port ${PORT}. Please open http://localhost:${PORT}/contacts/  or open example contact with id http://localhost:${PORT}/contacts/665750ca186de6756cbc2ca7/ in your browser.`,
+    );
   });
-};
+}
